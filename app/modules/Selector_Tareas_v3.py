@@ -13,7 +13,7 @@ pd.set_option('display.max_rows', None)
 
 ## 1. CARGAR DATASETS
 
-GUADALAJARA_FISICOS_AGO24 = pd.read_csv("https://raw.githubusercontent.com/Carlossp5/App_Parametros_Condicionales_Entrenamiento/GUADALAJARA24-25.csv", sep=',', index_col=False)
+GUADALAJARA_FISICOS_AGO24 = pd.read_csv("https://raw.githubusercontent.com/Carlossp5/Condicionales_Entrenamiento/GUADALAJARA24-25.csv", sep=',', index_col=False)
 
 ## 2. SELECCION DE VARIABLES
 df_entrenos_sel_vbles = GUADALAJARA_FISICOS_AGO24[['Player Name','Total Time','Player Position','Drill Title','Distance Total','High Speed Running (Absolute)','High Speed Running (Relative)',
