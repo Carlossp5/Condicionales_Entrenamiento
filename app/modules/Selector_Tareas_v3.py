@@ -54,27 +54,30 @@ def Tarea(time, var1, min1, max1, var2=None, min2=None, max2=None):
     min1, max1 = pd.to_numeric(min1), pd.to_numeric(max1)
     min2, max2 = pd.to_numeric(min2), pd.to_numeric(max2) if var2 else (None, None)
     time = pd.to_numeric(time)
-    Tiempo_s = time*60
+    Tiempo_s = time * 60
     Tiempo_m = time
-    
-    # Dado el tiempo calculo el valor de las variables en ese tiempo
-    df_entreno_x_tareas[var1] = df_entreno_x_tareas[var1]*time*60
+
+    # Trabajar sobre una copia temporal de df_entreno_x_tareas
+    df_entreno_temp = df_entreno_x_tareas.copy()
+
+    # Calcular el valor de las variables en función del tiempo
+    df_entreno_temp[var1] = df_entreno_temp[var1] * Tiempo_s
     if var2 and var2 != 'Ninguna':
-        df_entreno_x_tareas[var2] = df_entreno_x_tareas[var2]*time*60
+        df_entreno_temp[var2] = df_entreno_temp[var2] * Tiempo_s
 
     # Filtrar las filas que cumplen con la primera variable
-    filtro_var1 = (df_entreno_x_tareas[var1] >= min1) & (df_entreno_x_tareas[var1] <= max1)
-    
+    filtro_var1 = (df_entreno_temp[var1] >= min1) & (df_entreno_temp[var1] <= max1)
+
     # Filtrar si hay segunda variable, de lo contrario tomar solo el filtro de la primera
     if var2 and min2 is not None and max2 is not None:
-        filtro_var2 = (df_entreno_x_tareas[var2] >= min2) & (df_entreno_x_tareas[var2] <= max2)
+        filtro_var2 = (df_entreno_temp[var2] >= min2) & (df_entreno_temp[var2] <= max2)
     else:
-        filtro_var2 = True 
-    
+        filtro_var2 = True
+
     # Aplicar los filtros
-    df_filtrado = df_entreno_x_tareas[filtro_var1 & filtro_var2]
+    df_filtrado = df_entreno_temp[filtro_var1 & filtro_var2]
     df_filtrado.reset_index(inplace=True)
-    
+
     columnas_fisicas = [
         'Distance Total_s', 'High Speed Running (Absolute)_s', 'High Speed Running (Relative)_s',
         'HSR Per Minute (Absolute)_s', 'Sprint Distance_s', 'Sprints_s', 'Fatigue Index_s', 'HML Distance_s',
@@ -84,22 +87,20 @@ def Tarea(time, var1, min1, max1, var2=None, min2=None, max2=None):
 
     df_filtrado['Tiempo_s'] = Tiempo_s
     df_filtrado['Tiempo_m'] = Tiempo_m
-    
+
     # Crear DataFrame con los resultados filtrados
     for col in columnas_fisicas:
         if pd.api.types.is_numeric_dtype(df_filtrado[col]):
-            if (col == var1)|(col == var2):
-                df_filtrado[col] = df_filtrado[col]
-            else:
-                df_filtrado[col] = df_filtrado[col].fillna(0) * time * 60
+            if col != var1 and col != var2:  # Evita multiplicar variables seleccionadas de nuevo
+                df_filtrado[col] = df_filtrado[col].fillna(0) * Tiempo_s
 
-   # Renombrar las columnas físicas (quitar el sufijo '_s')
+    # Renombrar las columnas físicas (quitar el sufijo '_s')
     renombrar_columnas = {col: col.replace('_s', '') for col in columnas_fisicas}
     df_filtrado.rename(columns=renombrar_columnas, inplace=True)
 
     # Definir el orden final de las columnas (manteniendo 'Tiempo_s' y 'Tiempo_m' intactos)
     columnas_finales = ['Drill Title', 'Tiempo_s', 'Tiempo_m'] + list(renombrar_columnas.values())
-    
+
     df_resultado = df_filtrado[columnas_finales].copy()
 
     # Renombrar la columna de "Drill Title" a "Tarea"
