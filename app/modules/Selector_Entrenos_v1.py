@@ -90,19 +90,19 @@ def show():
 
     # Titulo de la barra lateral de la app
     st.sidebar.header("SELECTOR")
-
+    
     # Crear widgets para seleccionar los parametros
     lista_variables = ['Distance Total_s', 'High Speed Running (Absolute)_s','High Speed Running (Relative)_s',
                     'HSR Per Minute (Absolute)_s', 'Sprint Distance_s', 'Sprints_s',
-                    'Fatigue Index_s', 'HML Distance_s', 'HML Distance Per Minute_s',
-                    'HML Efforts_s', 'Accelerations_s', 'Max Acceleration_s', 'Decelerations_s',
-                    'Distance Per Min_s', 'Max Speed_s', 'Dynamic Stress Load_s',
-                    'HSR Per Minute (Relative)_s','Total Loading_s']
-
+                    'Fatigue Index_s', 'HML Distance_s','HML Efforts_s', 'Accelerations_s', 
+                    'Decelerations_s','Dynamic Stress Load_s','Total Loading_s']
+    Media_vbles = ['HSR Per Minute (Absolute)_s', 'HML Distance Per Minute_s','Distance Per Min_s','HSR Per Minute (Relative)_s']
+    Max_vbles = ['Max Acceleration_s', 'Max Speed_s']
+    
     Tarea_1 = st.sidebar.selectbox('Selecciona la tarea:', df_entreno_x_tareas['Drill Title'].to_list())
     Tiempo_seleccion = st.sidebar.number_input('Selecciona el tiempo en minutos:', min_value=0.5, max_value=120.0, value=5.0, step=0.5)
     
-
+    
     # # Widgets de la app para seleccionar los parametros
     if st.sidebar.button('Resultado'):
         valores_multiplicados = Parametros(Tarea_1, Tiempo_seleccion)
@@ -110,20 +110,37 @@ def show():
         # Mostrar el DataFrame en la interfaz de Streamlit
         st.write("Los parámetros físicos segun los ejercicios y la duración elegida son:")
         st.write(valores_multiplicados)
-
+    
         # Acumular el resultado en el DataFrame acumulado
         st.session_state.acumulado = pd.concat([st.session_state.acumulado, valores_multiplicados], ignore_index=True)
-
+    
+    if not st.session_state.acumulado.empty:
+        total_fila = {}  # Diccionario para almacenar el total por columna
+    
+        # Iteramos por cada columna del DataFrame acumulado
+        for column in st.session_state.acumulado.columns:
+            if column in Media_vbles:
+                total_fila[column] = st.session_state.acumulado[column].mean()  # Calcular la media para estas variables
+            elif column in Max_vbles:
+                total_fila[column] = st.session_state.acumulado[column].max()   # Calcular el máximo para estas variables
+            elif column not in ['Drill Title']:  # Excluir columnas no numéricas
+                total_fila[column] = st.session_state.acumulado[column].sum()  # Sumar el resto de variables
+            else:
+                total_fila[column] = 'TOTAL'  # Colocar "TOTAL" en las columnas no numéricas
+    
+        # Convertimos el total en DataFrame y lo concatenamos al acumulado
+        total_fila_df = pd.DataFrame([total_fila])
+        acumulado_con_total = pd.concat([st.session_state.acumulado, total_fila_df], ignore_index=True)
+    
         # Mostrar el DataFrame acumulado
         st.write("ENTRENAMIENTO TOTAL:")
         
-        total_fila = st.session_state.acumulado.select_dtypes(include=['float', 'int']).sum().to_dict()
-        total_fila['Tarea'] = 'TOTAL'
+        total_fila['Drill Title'] = 'TOTAL'
         total_fila_df = pd.DataFrame([total_fila])
         acumulado_con_total = pd.concat([st.session_state.acumulado, total_fila_df], ignore_index=True)
-
+    
         st.write(acumulado_con_total)
-
+    
     # Botón para resetear los datos acumulados
     if st.sidebar.button('Resetear acumulado'):
         st.session_state.acumulado = pd.DataFrame()  # Reinicia el acumulado
